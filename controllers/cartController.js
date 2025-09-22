@@ -8,7 +8,7 @@ export const addToCart = async (req, res) => {
     const { productId, quantity, selectedSize } = req.body;
 
     let cart = await Cart.findOne({ user: userId });
-
+    console.log(cart,"vsfedfdedfd")
     const product = await Product.findById(productId);
     if (!product) return res.status(404).json({ msg: "Product not found" });
 
@@ -40,6 +40,8 @@ export const addToCart = async (req, res) => {
     ).then((values) => values.reduce((acc, val) => acc + val, 0));
 
     await cart.save();
+        console.log(cart,"saveddd")
+
     res.json(cart);
   } catch (err) {
     res.status(500).json({ msg: err.message });
