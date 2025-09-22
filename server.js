@@ -14,7 +14,7 @@ import orderRoutes from "./routes/orderRoutes.js";
 const app = express();
 const allowedOrigins = [
   "http://localhost:3000", // Local dev
-  "https://e-commerence-zu8f.vercel.app/", // Your frontend domain on Vercel
+  "https://e-commerence-zu8f.vercel.app", // Your frontend domain on Vercel
 ];
 
 app.use(
