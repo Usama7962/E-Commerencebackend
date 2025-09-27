@@ -9,7 +9,7 @@ const orderSchema = new mongoose.Schema({
       selectedSize:String,
     },
   ],
-  address: { type: mongoose.Schema.Types.ObjectId, ref: "Address", required: true }, // ✅ reference
+  address: { type: mongoose.Schema.Types.ObjectId, ref: "Address", required: true }, 
   totalPrice: Number,
   
 }, { timestamps: true });
