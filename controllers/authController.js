@@ -1,9 +1,17 @@
-import { generateToken } from "../utils/token.js";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  verifyRefreshToken,
+} from "../utils/token.js";
 import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import nodemailer from "nodemailer";
+import dotenv from "dotenv";
+dotenv.config();
 
-// 🔹 Email transporter
+// =====================
+// Nodemailer transporter
+// =====================
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -18,7 +26,7 @@ const transporter = nodemailer.createTransport({
 export const signup = async (req, res) => {
   try {
     const { firstName, email, password } = req.body;
-    
+
     const existingUser = await User.findOne({ email });
     if (existingUser)
       return res.status(400).json({ msg: "User already exists" });
@@ -34,20 +42,46 @@ export const signup = async (req, res) => {
   }
 };
 
-
-
+// =====================
+// Login → Access + Refresh token
+// =====================
 export const login = async (req, res) => {
   try {
-    const {  email, password } = req.body;
+    const { email, password } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ msg: "User not found" });
+
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ msg: "Invalid credentials" });
-  const token = generateToken({ id: user._id, email: user.email, role: user.role });
+
+    const accessToken = generateAccessToken({
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    });
+
+    const refreshToken = generateRefreshToken({
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    });
+
+    // optional: save refreshToken in DB for extra security
+    user.refreshToken = refreshToken;
+    await user.save();
+
+    // send refresh token in cookie (httpOnly, secure)
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
 
     res.json({
-      token,
+      accessToken,
+      refreshToken,
       user: {
         id: user._id,
         email: user.email,
@@ -60,18 +94,59 @@ export const login = async (req, res) => {
 };
 
 // =====================
+// Refresh Access Token
+// =====================
+export const refreshToken = async (req, res) => {
+  try {
+    const {refreshToken}= req.body
+console.log(req.body,"ssdfsdf")
+    if (!refreshToken) return res.status(401).json({ msg: "No refresh token" });
+
+    const decoded = verifyRefreshToken(refreshToken);
+
+    const user = await User.findById(decoded.id);
+    if (!user || user.refreshToken !== refreshToken) {
+      return res.status(401).json({ msg: "Invalid refresh token" });
+    }
+
+    const newAccessToken = generateAccessToken({
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    });
+
+    res.json({ accessToken: newAccessToken });
+  } catch (err) {
+    res.status(401).json({ msg: err.message });
+  }
+};
+
+// =====================
+// Logout → clear refresh token
+// =====================
+export const logout = async (req, res) => {
+  try {
+    res.clearCookie("refreshToken");
+    if (req.user) {
+      await User.findByIdAndUpdate(req.user.id, { refreshToken: "" });
+    }
+    res.json({ msg: "Logged out successfully" });
+  } catch (err) {
+    res.status(500).json({ msg: err.message });
+  }
+};
+
+// =====================
 // Forget Password → Send OTP
 // =====================
 export const forgetPassword = async (req, res) => {
   try {
     const { email } = req.body;
-
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ msg: "User not found" });
 
     // Generate OTP
     const otp = Math.floor(100000 + Math.random() * 900000); // 6 digit
-
     user.resetToken = otp;
     user.resetTokenExpiry = Date.now() + 15 * 60 * 1000; // 15 minutes
     await user.save();
@@ -101,7 +176,6 @@ export const verifyOtp = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ msg: "User not found" });
 
-    // Check OTP and expiry
     if (
       parseInt(user.resetToken) !== parseInt(otp) ||
       user.resetTokenExpiry < Date.now()
@@ -128,7 +202,6 @@ export const resetPassword = async (req, res) => {
     const hashPass = await bcrypt.hash(password, 10);
     user.password = hashPass;
 
-    // Clear OTP fields
     user.resetToken = undefined;
     user.resetTokenExpiry = undefined;
 
