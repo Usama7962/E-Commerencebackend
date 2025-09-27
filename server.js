@@ -17,6 +17,7 @@ const app = express();
 const allowedOrigins = [
   "http://localhost:3000",
   "https://e-commerence-zu8f.vercel.app",
+  "https://e-commerence-kappa.vercel.app"
 ];
 
 app.use(
