@@ -22,6 +22,9 @@ export const createProduct = async (req, res) => {
       price: req.body.price,
       category: req.body.category,
       imageUrl,
+      ingredients: req.body.ingredients,
+      usage: req.body.usage,
+      benefits: req.body.benefits,
     });
     await product.save();
     console.log("createProduct: saved product:", product);
@@ -67,7 +70,15 @@ export const deleteProduct = async (req, res) => {
   console.log("deleteProduct: deleted:", deleted);
   res.json({ message: "Deleted" });
 };
-// ✅ Get products by category
+export const getCategories = async (req, res) => {
+  try {
+    const categories = await Product.distinct("category");
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ msg: "Server error" });
+  }
+};
+
 export const getProductsByCategory = async (req, res) => {
   try {
     const { category } = req.params; // URL se category

@@ -1,5 +1,8 @@
 // db.js
+import dns from "node:dns";
 import mongoose from "mongoose";
+
+dns.setServers(["1.1.1.1", "8.8.8.8"]);
 
 let isConnected = false;
 
@@ -10,10 +13,7 @@ export const connectDB = async () => {
   }
 
   try {
-    const db = await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    const db = await mongoose.connect(process.env.MONGO_URI || process.env.MONGODB_URI);
 
     isConnected = db.connections[0].readyState === 1;
     console.log("✅ MongoDB Connected");

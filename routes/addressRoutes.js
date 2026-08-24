@@ -5,20 +5,13 @@ import {
   updateAddress,
   deleteAddress,
 } from "../controllers/addressController.js";
-import { isAuthenticated } from "../middleware/authMiddleware.js";
+import { validateAddress, validateMongoId } from "../middleware/validate.js";
 
 const router = express.Router();
 
-// ✅ Get all addresses for logged-in user
-router.get("/", isAuthenticated, getAddressesByUser);
-
-// ✅ Add new address
-router.post("/", isAuthenticated, addAddress);
-
-// ✅ Update address by ID
-router.put("/:id", isAuthenticated, updateAddress);
-
-// ✅ Delete address by ID
-router.delete("/:id", isAuthenticated, deleteAddress);
+router.get("/", getAddressesByUser);
+router.post("/", validateAddress, addAddress);
+router.put("/:id", validateMongoId, validateAddress, updateAddress);
+router.delete("/:id", validateMongoId, deleteAddress);
 
 export default router;

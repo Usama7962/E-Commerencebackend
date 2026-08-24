@@ -1,11 +1,11 @@
 import express from "express";
 import { addToCart, getCart, removeFromCart } from "../controllers/cartController.js";
-import {isAuthenticated} from "../middleware/authMiddleware.js";
+import { validateCart, validateProductId } from "../middleware/validate.js";
 
 const router = express.Router();
 
-router.post("/add", isAuthenticated, addToCart);
-router.get("/", isAuthenticated, getCart);
-router.delete("/:productId", isAuthenticated, removeFromCart);
+router.post("/add", validateCart, addToCart);
+router.get("/", getCart);
+router.delete("/:productId", validateProductId, removeFromCart);
 
 export default router;

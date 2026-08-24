@@ -1,15 +1,10 @@
 import Address from "../models/Address.js";
+import { getSessionFilter } from "../utils/session.js";
 
 // ✅ Get All Addresses by UserId
 export const getAddressesByUser = async (req, res) => {
   try {
-    const userId = req.user.id;
-    const addresses = await Address.find({ userId });
-
-    if (!addresses || addresses.length === 0) {
-      return res.status(200).json({ msg: "No address found", addresses: [] });
-    }
-
+    const addresses = await Address.find(getSessionFilter(req, res));
     res.status(200).json(addresses);
   } catch (error) {
     res.status(500).json({ msg: "Server error", error: error.message });
@@ -19,11 +14,16 @@ export const getAddressesByUser = async (req, res) => {
 // ✅ Add New Address
 export const addAddress = async (req, res) => {
   try {
-    const userId = req.user.id;
     const { fullName, phone, state, city, postalCode, address } = req.body;
 
+    if (!fullName || !phone || !city || !postalCode || !address) {
+      return res.status(400).json({ msg: "All address fields are required" });
+    }
+
+    const sessionFilter = getSessionFilter(req, res);
+
     const newAddress = new Address({
-      userId,
+      ...sessionFilter,
       fullName,
       phone,
       state,
@@ -43,10 +43,10 @@ export const addAddress = async (req, res) => {
 export const updateAddress = async (req, res) => {
   try {
     const { id } = req.params; // Address ID
-    const userId = req.user.id;
+    const sessionFilter = getSessionFilter(req, res);
 
     const updated = await Address.findOneAndUpdate(
-      { _id: id, userId },
+      { _id: id, ...sessionFilter },
       req.body,
       { new: true }
     );
@@ -65,9 +65,9 @@ export const updateAddress = async (req, res) => {
 export const deleteAddress = async (req, res) => {
   try {
     const { id } = req.params; // Address ID
-    const userId = req.user.id;
+    const sessionFilter = getSessionFilter(req, res);
 
-    const deleted = await Address.findOneAndDelete({ _id: id, userId });
+    const deleted = await Address.findOneAndDelete({ _id: id, ...sessionFilter });
     if (!deleted) {
       return res.status(404).json({ msg: "No address found to delete" });
     }

@@ -29,7 +29,7 @@ export const verifyAccessToken = (token) => {
   try {
     return jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
   } catch (error) {
-    throw new Error("Invalid or expired access token");
+    throw error;
   }
 };
 
@@ -40,7 +40,7 @@ export const verifyRefreshToken = (token) => {
   try {
     return jwt.verify(token, process.env.REFRESH_TOKEN_SECRET);
   } catch (error) {
-    throw new Error("Invalid or expired refresh token");
+    throw error;
   }
 };
 
